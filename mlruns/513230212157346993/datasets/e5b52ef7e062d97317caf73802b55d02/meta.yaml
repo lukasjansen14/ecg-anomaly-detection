@@ -1,0 +1,11 @@
+digest: d562d89b
+name: dataset
+profile: '{"features_shape": [4500, 140, 1], "features_size": 630000, "features_nbytes":
+  2520000, "targets_shape": [4500, 140, 1], "targets_size": 630000, "targets_nbytes":
+  2520000}'
+schema: '{"mlflow_tensorspec": {"features": "[{\"type\": \"tensor\", \"tensor-spec\":
+  {\"dtype\": \"float32\", \"shape\": [-1, 140, 1]}}]", "targets": "[{\"type\": \"tensor\",
+  \"tensor-spec\": {\"dtype\": \"float32\", \"shape\": [-1, 140, 1]}}]"}}'
+source: '{"tags": {"mlflow.user": "riemann", "mlflow.source.name": "cnn_ae.py", "mlflow.source.type":
+  "LOCAL"}}'
+source_type: code

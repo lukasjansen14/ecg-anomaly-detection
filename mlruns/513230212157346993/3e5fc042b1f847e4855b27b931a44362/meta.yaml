@@ -1,0 +1,15 @@
+artifact_uri: file:///home/riemann/Fh/master-thesis/ecg/mlruns/513230212157346993/3e5fc042b1f847e4855b27b931a44362/artifacts
+end_time: 1750760779937
+entry_point_name: ''
+experiment_id: '513230212157346993'
+lifecycle_stage: active
+run_id: 3e5fc042b1f847e4855b27b931a44362
+run_name: fp32_train
+run_uuid: 3e5fc042b1f847e4855b27b931a44362
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750760769959
+status: 4
+tags: []
+user_id: riemann

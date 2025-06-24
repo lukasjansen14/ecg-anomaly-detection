@@ -1,0 +1,6 @@
+artifact_location: file:///home/riemann/Fh/master-thesis/ecg/mlruns/513230212157346993
+creation_time: 1750760577789
+experiment_id: '513230212157346993'
+last_update_time: 1750760577789
+lifecycle_stage: active
+name: ECG5000-CNN-AE-Compression
