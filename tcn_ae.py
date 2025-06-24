@@ -13,9 +13,9 @@ from sklearn.metrics import roc_auc_score, average_precision_score, \
 SEED = 42
 np.random.seed(SEED); tf.random.set_seed(SEED)
 
-BATCH_SIZE, EPOCHS, CALIB_SAMPLES = 512, 20, 400
-THRESH_FRAC = .30                        # 30-th quantile for TCN
-MLFLOW_EXPERIMENT = "ECG5000-TCN-AE"
+BATCH_SIZE, EPOCHS, CALIB_SAMPLES = 512, 30, 400  # More epochs only
+THRESH_FRAC = .20                        # Try lower threshold for better recall
+MLFLOW_EXPERIMENT = "ECG5000-TCN-AE-Conservative"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # ---------- 1. Load ECG-5000 ----------
@@ -35,12 +35,13 @@ print(f"Training on {len(x_train_normal)} normal samples")
 
 # ---------- 2. Build TCN-AE ----------
 from tensorflow.keras import layers
-def _tcn_block(x, nf, d):
+def _tcn_block(x, nf, d, dropout_rate=0.05):  # Minimal dropout
     # Get input filters for residual connection
     input_filters = x.shape[-1]
     
     y = layers.Conv1D(nf, 7, padding='same', dilation_rate=d)(x)
     y = layers.BatchNormalization()(y); y = layers.ReLU()(y)
+    y = layers.Dropout(dropout_rate)(y)  # Light dropout
     y = layers.Conv1D(nf, 7, padding='same', dilation_rate=d)(y)
     y = layers.BatchNormalization()(y)
     
@@ -53,31 +54,32 @@ def _tcn_block(x, nf, d):
 
 def build_model():
     inp = layers.Input(shape=(140,1))
-    x   = layers.Conv1D(32, 1, padding='same')(inp)            # stem with 32 filters
+    x   = layers.Conv1D(32, 1, padding='same')(inp)  # Back to original size
     
-    # TCN blocks with consistent filter sizes
-    for d in [1,2,4,8]:
-        x = _tcn_block(x, 32, d)
+    # Keep original TCN structure but add one more dilation
+    for d in [1,2,4,8,16]:  # Just one extra dilation
+        x = _tcn_block(x, 32, d, dropout_rate=0.05)  # Light dropout
     
-    # Encoder bottleneck
-    x = layers.Conv1D(16, 1, padding='same')(x)  # compress to bottleneck
-    x = layers.GlobalAveragePooling1D()(x)
+    # Keep the original decoder structure that worked
+    x = layers.Conv1D(16, 1, padding='same')(x)  # Light compression
+    x = layers.GlobalAveragePooling1D()(x)  # Keep original approach
     
-    # Decoder
+    # Original decoder
     x = layers.Dense(140)(x)
     out = layers.Reshape((140,1))(x)
     
-    model = tf.keras.Model(inp, out, name="tcn_ae")
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3), loss="mse")
+    model = tf.keras.Model(inp, out, name="tcn_ae_conservative")
+    model.compile(optimizer=tf.keras.optimizers.Adam(8e-4), loss="mse")  # Slightly lower LR
     return model
 
 model = build_model()
 
 # ---------- 3. MLflow run ----------
 mlflow.set_experiment(MLFLOW_EXPERIMENT)
-with mlflow.start_run(run_name="tcn_fp32") as run:
+with mlflow.start_run(run_name="tcn_conservative") as run:
     mlflow.log_params({"epochs":EPOCHS,"batch_size":BATCH_SIZE,
-                       "dilations":"1,2,4,8","filters":"32-32-32-32","bottleneck":"16"})
+                       "dilations":"1,2,4,8,16","filters":"32","dropout":"0.05",
+                       "lr":"8e-4","thresh_frac":THRESH_FRAC})
     mlflow.tensorflow.autolog(log_models=False)
 
     model.fit(x_train_normal, x_train_normal,
